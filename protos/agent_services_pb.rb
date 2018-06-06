@@ -23,6 +23,7 @@ module FastlaneCI
       self.service_name = 'fastlane_c_i.Agent'
 
       rpc :Spawn, Command, stream(Log)
+      rpc :RunFastlane, BuildRequest, stream(BuildResponse)
     end
 
     Stub = Service.rpc_stub_class

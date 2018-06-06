@@ -12,6 +12,7 @@ package fastlane_c_i;
 
 service Agent {
   rpc Spawn(Command) returns (stream Log) {}
+  rpc RunFastlane(BuildRequest) returns (stream BuildResponse) {}
 }
 
 message Log {
@@ -30,6 +31,7 @@ message Log {
 
   // the exit status of the Command. The last `Log` of a stream should contain only a `status` field.
   int32 status = 3;
+  uint32 timestamp = 4;
 }
 
 // A command to be spawned on by the server.
@@ -42,4 +44,73 @@ message Command {
 
   // a map of the environment to be given to the child process.
   map<string,string> env = 3;
+
+  // TODO: some kind of ID for a given run to be used
+}
+
+message BuildRequest {
+  Command command = 1;
+
+}
+
+message BuildResponse {
+
+  message Artifact {
+    enum Type {
+      ARCHIVE = 0;
+    }
+
+    Type type = 1;
+
+    string filename = 2;
+
+    // we may be sending logs as utf8 encoded chunks, or it may be a binary file.
+    enum Encoding {
+      ASCII = 0; // used for 8bit binary data
+      UTF8  = 1; // used for strings such as logs.
+    }
+
+    Encoding encoding = 3;
+    bytes chunk = 4;
+  }
+
+
+  // Error is used to capture where a particular build failed and for what reason.
+  // This is useful in presenting the error to the user or being able to link to the test cases on the web.
+  // If we have an Error in our stream, we can assume the stream will close.
+  message BuildError {
+    // in case we don't have a file, line_number, etc we can put a description here.
+    // e.g. Agent cannot clone the repo because of permissions errors.
+    string error_description = 1;
+
+    string file = 2;
+    uint32 line_number = 3;
+    string stacktrace = 4;
+    uint32 exit_status = 5;
+  }
+
+  // the status of the current Build
+  message Status {
+    enum State {
+      PENDING = 0;
+      RUNNING = 1;
+      FINISHING = 2;  // job was successful, but we are still transmitting artifact.
+      ERROR = 3;
+      SUCCESS = 4;
+      REJECTED = 5;
+    }
+
+    State state = 1;
+    string desription = 2; // provide more info for rejection.
+  }
+
+  // we can only have an error or an artifact.
+  oneof message_types {
+
+    BuildError build_error = 1;
+    Artifact artifact = 2;
+    Status status = 3;
+    Log log = 4;
+  }
+
 }
