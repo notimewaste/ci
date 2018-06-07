@@ -57,14 +57,12 @@ module FastlaneCI
           project_id: project_id,
           build_number: build_number
         )
-
         next if current_build_runner.nil? # this is the case if the build was run a while ago
 
         # TODO: Think this through, do we properly add new listener, and notify them of line changes, etc.
         #       Also how does the "offboarding" of runners work once the tests are finished
         current_build_runner.add_listener(proc do |row|
           # TODO: Add auth check here, so a user isn't able to get the log from another build
-          next if ws.nil?
           unless ws.send(row.to_json)
             logger.error("Something failed when sending the current row via a web socket connection")
           end
