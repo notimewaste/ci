@@ -60,7 +60,8 @@ module FastlaneCI::Agent
         finish
       else
         # fail is a keyword, so we must call self.
-        fail
+        # rubocop:disable Style/RedundantSelf
+        self.fail
       end
     end
 
