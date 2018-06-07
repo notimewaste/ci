@@ -95,13 +95,14 @@ message BuildResponse {
       PENDING = 0;
       RUNNING = 1;
       FINISHING = 2;  // job was successful, but we are still transmitting artifact.
-      ERROR = 3;
-      SUCCESS = 4;
-      REJECTED = 5;
+      CAUGHT = 3;
+      SUCCEEDED = 4;
+      FAILED = 5;     // failed is when a test failed, error is when it could not complete the run.
+      REJECTED = 6;
     }
 
     State state = 1;
-    string desription = 2; // provide more info for rejection.
+    string description = 2; // provide more info for rejection.
   }
 
   // we can only have an error or an artifact.

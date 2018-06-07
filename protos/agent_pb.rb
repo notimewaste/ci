@@ -55,15 +55,16 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   end
   add_message "fastlane_c_i.BuildResponse.Status" do
     optional :state, :enum, 1, "fastlane_c_i.BuildResponse.Status.State"
-    optional :desription, :string, 2
+    optional :description, :string, 2
   end
   add_enum "fastlane_c_i.BuildResponse.Status.State" do
     value :PENDING, 0
     value :RUNNING, 1
     value :FINISHING, 2
-    value :ERROR, 3
-    value :SUCCESS, 4
-    value :REJECTED, 5
+    value :CAUGHT, 3
+    value :SUCCEEDED, 4
+    value :FAILED, 5
+    value :REJECTED, 6
   end
 end
 

@@ -1,12 +1,13 @@
-require "logger"
 require "open3"
 require_relative "agent"
+require_relative "build"
 
 module FastlaneCI
   module Agent
     ##
     # A simple implementation of the agent service.
     class Server < Service
+      include Logging
       ##
       # this class is used to create a lazy enumerator
       # that will yield back lines from the stdout/err of the process
@@ -25,26 +26,6 @@ module FastlaneCI
         end
       end
 
-      class FileEnumerator
-        extend Forwardable
-        include Enumerable
-
-        def_delegators :@enumerator, :each, :next
-
-        def initialize(io, thread, chunk_size = 1024*1024)
-          @enumerator = Enumerator.new do |yielder|
-
-            # loop until the thread dies and the file has be read completely
-            while thread.alive? || !io.eof?
-              chunk = io.read(chunk_size)
-              yielder.yield(chunk)
-            end
-
-            io.close
-          end
-        end
-      end
-
       def self.server
         GRPC::RpcServer.new.tap do |server|
           server.add_http2_port("#{HOST}:#{PORT}", :this_port_is_insecure)
@@ -53,7 +34,7 @@ module FastlaneCI
       end
 
       def initialize
-        @logger = Logger.new(STDOUT)
+        @invocation_mutex = Mutex.new
       end
 
       ##
@@ -65,11 +46,11 @@ module FastlaneCI
       # @input FastlaneCI::Agent::Command
       # @output Enumerable::Lazy<FastlaneCI::Agent::Log> A lazy enumerable with log lines.
       def spawn(command, _call)
-        @logger.info("spawning process with command: #{command.bin} #{command.parameters}, env: #{command.env.to_h}")
+        logger.info("spawning process with command: #{command.bin} #{command.parameters}, env: #{command.env.to_h}")
         stdin, stdouterr, wait_thrd = Open3.popen2e(command.env.to_h, command.bin, *command.parameters)
         stdin.close
 
-        @logger.info("spawned process with pid: #{wait_thrd.pid}")
+        logger.info("spawned process with pid: #{wait_thrd.pid}")
 
         output_enumerator = ProcessOutputEnumerator.new(stdouterr, wait_thrd)
         # convert every line from io to a Log object in a lazy stream
@@ -81,55 +62,34 @@ module FastlaneCI
       end
 
       def run_fastlane(build_request, _call)
-        command = build_request.command
-        @logger.info("spawning process with command: #{command.bin} #{command.parameters}, env: #{command.env.to_h}")
+        logger.info("RCP run_fastlane: #{build_request.command.bin} #{build_request.command.parameters}, env: #{build_request.command.env.to_h}")
 
-        artifact_path = command.env.to_h['FASTLANE_CI_ARTIFACTS']
+        # fastlane actions are not thread-safe and we must not run more than 1 at a time.
+        # because the grpc server is multi-threaded we may lock the invocation with a mutex
+        @invocation_mutex.synchronize do
 
-        stdin, stdouterr, thread = Open3.popen2e(command.env.to_h, command.bin, *command.parameters)
-        stdin.close
+          Enumerator.new do |yielder|
+            begin
+              build = Build.new(build_request, yielder)
+              build.run
 
-        @logger.info("spawned process with pid: #{thread.pid}")
+            rescue => exception
+              logger.error("Caught Error: #{exception}")
+              status = BuildResponse::Status.new(state: :CAUGHT)
+              yielder << BuildResponse.new(status: status)
 
-        # TODO: encapsulate this workflow in a Build class that uses a proper Finite State Machine.
-        Enumerator.new do |yeilder|
-          status = BuildResponse::Status.new(state: :RUNNING)
-          yeilder << BuildResponse.new(status: status)
-
-          while message = stdouterr.gets
-            log = Log.new(message: message)
-            yeilder << BuildResponse.new(log: log)
+              error = BuildResponse::BuildError.new
+              error.stacktrace = exception.backtrace.join("\n")
+              error.error_description = exception.message
+              yielder << BuildResponse.new(build_error: error)
+            end
           end
-
-          if thread.value.exitstatus == 0
-            status = BuildResponse::Status.new(state: :FINISHING)
-            yeilder << BuildResponse.new(status: status)
-          else
-            status = BuildResponse::Status.new(state: :ERROR)
-            yeilder << BuildResponse.new(status: status)
-            next
-          end
-
-          Dir.chdir(artifact_path) do
-            system("tar -cvzf Archive.tgz .")
-          end
-
-          file = File.open(File.join(artifact_path, 'Archive.tgz'), 'rb') #TODO make sure this is binary
-
-          until file.eof?
-            artifact = BuildResponse::Artifact.new
-            artifact.chunk = file.read(chunk_size)
-
-            yeilder << BuildResponse.new(artifact: artifact)
-          end
-
-          status = BuildResponse::Status.new(state: :SUCCESS)
-          yeilder << BuildResponse.new(status: status)
         end
       end
-    end
-  end
-end
+
+    end # Server
+  end # Agent
+end # FastlaneCI
 
 
 if $0 == __FILE__

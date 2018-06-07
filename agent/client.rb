@@ -29,12 +29,21 @@ end
 
 if $0 == __FILE__
   client = FastlaneCI::Agent::Client.new("localhost")
-  response = client.request_run_fastlane("ping -c 3 google.com; derp;")
+  response = client.request_run_fastlane("actions", env: {'FASTLANE_CI_ARTIFACTS' => 'artifacts', 'GIT_URL' => 'https://github.com/snatchev/themoji-ios'})
+  @file = nil
   response.each do |r|
     puts "Log: #{r.log.message}" if r.log
 
     puts "Status: #{r.status.state}" if r.status
 
-    puts "Chunk: #{r.artifact.chunk}" if r.artifact
+
+    puts "Error: #{r.build_error.error_description} #{r.build_error.stacktrace}" if r.build_error
+
+    if r.artifact
+      puts "Chunk: writing to #{r.artifact.filename}"
+      @file ||= File.new(r.artifact.filename, 'wb')
+      @file.write(r.artifact.chunk)
+    end
   end
+  @file && @file.close
 end

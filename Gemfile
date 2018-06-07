@@ -64,6 +64,9 @@ gem "xcode-install", ">= 2.4.0", "< 3.0.0"
 # Interprocess communication
 gem "grpc", ">= 1.11.0", "< 2.0.0"
 
+# state machine for ruby objects
+gem "micromachine", ">= 3.0.0", "< 4.0.0"
+
 # Internal projects
 gem "fastfile-parser", git: "https://github.com/fastlane/fastfile-parser", require: false
 gem "fastlane", git: "https://github.com/fastlane/fastlane"
