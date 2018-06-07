@@ -14,11 +14,6 @@ module FastlaneCI
         @stub.spawn(command)
       end
 
-      def request_send_file()
-        file_request = FileRequest.new
-        @stub.send_file(file_request)
-      end
-
       def request_run_fastlane(bin, *params, env: {})
         command = Command.new(bin: bin, parameters: params, env: env)
         @stub.run_fastlane(BuildRequest.new(command: command))
