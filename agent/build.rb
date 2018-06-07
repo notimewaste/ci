@@ -17,24 +17,22 @@ module FastlaneCI::Agent
 
       @output_queue = Queue.new
 
-      @state = MicroMachine.new('pending').tap do |fsm|
-        fsm.when(:run,     'pending'   => 'running')
-        fsm.when(:finish,  'running'   => 'finishing')
-        fsm.when(:succeed, 'finishing' => 'succeeded')
-        fsm.when(:reject,  'running'   => 'rejected')
-        fsm.when(:fail,    'running'   => 'failed')
+      @state = MicroMachine.new("pending").tap do |fsm|
+        fsm.when(:run,     "pending"   => "running")
+        fsm.when(:finish,  "running"   => "finishing")
+        fsm.when(:succeed, "finishing" => "succeeded")
+        fsm.when(:reject,  "running"   => "rejected")
+        fsm.when(:fail,    "running"   => "failed")
 
         # TODO: this is unused for now. throwing/catching is handled by the listener.
-        fsm.when(:throw,   'pending'   => 'caught',
-                           'running'   => 'caught',
-                           'finishing' => 'caught')
-
+        fsm.when(:throw,   "pending"   => "caught",
+                           "running"   => "caught",
+                           "finishing" => "caught")
 
         # send update whenever we transition states.
         fsm.on(:any) do |event, payload|
           send_status(event, payload)
         end
-
       end
     end
 
@@ -46,9 +44,7 @@ module FastlaneCI::Agent
       # send logs that get put on the output queue.
       # this needs to be on a separate thread since Queue is a threadsafe blocking queue.
       Thread.new do
-        while @state.state == 'running'
-          send_log(@output_queue.pop)
-        end
+        send_log(@output_queue.pop) while @state.state == "running"
       end
 
       git_url = command_env(:GIT_URL)
@@ -64,7 +60,7 @@ module FastlaneCI::Agent
         finish
       else
         # fail is a keyword, so we must call self.
-        self.fail
+        fail
       end
     end
 
@@ -154,14 +150,14 @@ module FastlaneCI::Agent
       @yielder << FastlaneCI::BuildResponse.new(log: log)
     end
 
-    def send_archive(artifact_path, chunk_size: 1024*1024)
-      archive_path = File.join(artifact_path, 'Archive.tgz')
+    def send_archive(artifact_path, chunk_size: 1024 * 1024)
+      archive_path = File.join(artifact_path, "Archive.tgz")
       unless File.exist?(archive_path)
         logger.debug("No Archive found at #{archive_path}. Skipping sending the archive.")
         return
       end
 
-      file = File.open(archive_path, 'rb')
+      file = File.open(archive_path, "rb")
 
       until file.eof?
         artifact = FastlaneCI::BuildResponse::Artifact.new
@@ -194,12 +190,11 @@ module FastlaneCI::Agent
     def command_env(key)
       key = key.to_s
       env = @build_request.command.env.to_h
-      if env.has_key?(key)
+      if env.key?(key)
         env[key]
       else
         raise NameError, "`#{env}` does not have a key `#{key}`"
       end
     end
-
   end
 end

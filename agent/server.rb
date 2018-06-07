@@ -67,13 +67,11 @@ module FastlaneCI
         # fastlane actions are not thread-safe and we must not run more than 1 at a time.
         # because the grpc server is multi-threaded we may lock the invocation with a mutex
         @invocation_mutex.synchronize do
-
           Enumerator.new do |yielder|
             begin
               build = Build.new(build_request, yielder)
               build.run
-
-            rescue => exception
+            rescue StandardError => exception
               logger.error("Caught Error: #{exception}")
               status = BuildResponse::Status.new(state: :CAUGHT)
               yielder << BuildResponse.new(status: status)
@@ -86,11 +84,9 @@ module FastlaneCI
           end
         end
       end
-
     end # Server
   end # Agent
 end # FastlaneCI
-
 
 if $0 == __FILE__
   server = FastlaneCI::Agent::Server.server
