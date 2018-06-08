@@ -6,8 +6,8 @@ module FastlaneCI
   module Agent
     ##
     # A simple implementation of the agent service.
-    class Server < Service
-      include Logging
+    class Server < FastlaneCI::Proto::Agent::Service
+      include FastlaneCI::Agent::Logging
       ##
       # this class is used to create a lazy enumerator
       # that will yield back lines from the stdout/err of the process
@@ -57,7 +57,7 @@ module FastlaneCI
         output_enumerator.lazy.flat_map do |line, status|
           # proto3 doesn't have nullable fields, afaik
           puts line
-          Log.new(message: (line || NULL_CHAR), status: (status || 0))
+          Proto::Log.new(message: (line || NULL_CHAR), status: (status || 0))
         end
       end
 
@@ -72,14 +72,16 @@ module FastlaneCI
               build = Build.new(build_request, yielder)
               build.run
             rescue StandardError => exception
-              logger.error("Caught Error: #{exception}")
-              status = BuildResponse::Status.new(state: :CAUGHT)
-              yielder << BuildResponse.new(status: status)
+              #build.throw(exception)
 
-              error = BuildResponse::BuildError.new
+              logger.error("Caught Error: #{exception}")
+              status = Proto::BuildResponse::Status.new(state: :CAUGHT)
+              yielder << Proto::BuildResponse.new(status: status)
+
+              error = Proto::BuildResponse::BuildError.new
               error.stacktrace = exception.backtrace.join("\n")
               error.error_description = exception.message
-              yielder << BuildResponse.new(build_error: error)
+              yielder << Proto::BuildResponse.new(build_error: error)
             end
           end
         end

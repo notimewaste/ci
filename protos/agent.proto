@@ -8,7 +8,7 @@
 
 syntax = "proto3";
 
-package fastlane_c_i;
+package FastlaneCI.Proto;
 
 service Agent {
   rpc Spawn(Command) returns (stream Log) {}
@@ -53,25 +53,13 @@ message BuildRequest {
 
 }
 
+
+// TODO: rename to invocation.
 message BuildResponse {
 
   message Artifact {
-    enum Type {
-      ARCHIVE = 0;
-    }
-
-    Type type = 1;
-
-    string filename = 2;
-
-    // we may be sending logs as utf8 encoded chunks, or it may be a binary file.
-    enum Encoding {
-      ASCII = 0; // used for 8bit binary data
-      UTF8  = 1; // used for strings such as logs.
-    }
-
-    Encoding encoding = 3;
-    bytes chunk = 4;
+    string filename = 1;
+    bytes chunk = 2;
   }
 
 

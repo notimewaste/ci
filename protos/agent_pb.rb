@@ -4,60 +4,51 @@
 require 'google/protobuf'
 
 Google::Protobuf::DescriptorPool.generated_pool.build do
-  add_message "fastlane_c_i.Log" do
+  add_message "FastlaneCI.Proto.Log" do
     optional :message, :string, 1
-    optional :level, :enum, 2, "fastlane_c_i.Log.Level"
+    optional :level, :enum, 2, "FastlaneCI.Proto.Log.Level"
     optional :status, :int32, 3
     optional :timestamp, :uint32, 4
   end
-  add_enum "fastlane_c_i.Log.Level" do
+  add_enum "FastlaneCI.Proto.Log.Level" do
     value :DEBUG, 0
     value :INFO, 1
     value :WARN, 2
     value :ERROR, 3
     value :FATAL, 5
   end
-  add_message "fastlane_c_i.Command" do
+  add_message "FastlaneCI.Proto.Command" do
     optional :bin, :string, 1
     repeated :parameters, :string, 2
     map :env, :string, :string, 3
   end
-  add_message "fastlane_c_i.BuildRequest" do
-    optional :command, :message, 1, "fastlane_c_i.Command"
+  add_message "FastlaneCI.Proto.BuildRequest" do
+    optional :command, :message, 1, "FastlaneCI.Proto.Command"
   end
-  add_message "fastlane_c_i.BuildResponse" do
+  add_message "FastlaneCI.Proto.BuildResponse" do
     oneof :message_types do
-      optional :build_error, :message, 1, "fastlane_c_i.BuildResponse.BuildError"
-      optional :artifact, :message, 2, "fastlane_c_i.BuildResponse.Artifact"
-      optional :status, :message, 3, "fastlane_c_i.BuildResponse.Status"
-      optional :log, :message, 4, "fastlane_c_i.Log"
+      optional :build_error, :message, 1, "FastlaneCI.Proto.BuildResponse.BuildError"
+      optional :artifact, :message, 2, "FastlaneCI.Proto.BuildResponse.Artifact"
+      optional :status, :message, 3, "FastlaneCI.Proto.BuildResponse.Status"
+      optional :log, :message, 4, "FastlaneCI.Proto.Log"
     end
   end
-  add_message "fastlane_c_i.BuildResponse.Artifact" do
-    optional :type, :enum, 1, "fastlane_c_i.BuildResponse.Artifact.Type"
-    optional :filename, :string, 2
-    optional :encoding, :enum, 3, "fastlane_c_i.BuildResponse.Artifact.Encoding"
-    optional :chunk, :bytes, 4
+  add_message "FastlaneCI.Proto.BuildResponse.Artifact" do
+    optional :filename, :string, 1
+    optional :chunk, :bytes, 2
   end
-  add_enum "fastlane_c_i.BuildResponse.Artifact.Type" do
-    value :ARCHIVE, 0
-  end
-  add_enum "fastlane_c_i.BuildResponse.Artifact.Encoding" do
-    value :ASCII, 0
-    value :UTF8, 1
-  end
-  add_message "fastlane_c_i.BuildResponse.BuildError" do
+  add_message "FastlaneCI.Proto.BuildResponse.BuildError" do
     optional :error_description, :string, 1
     optional :file, :string, 2
     optional :line_number, :uint32, 3
     optional :stacktrace, :string, 4
     optional :exit_status, :uint32, 5
   end
-  add_message "fastlane_c_i.BuildResponse.Status" do
-    optional :state, :enum, 1, "fastlane_c_i.BuildResponse.Status.State"
+  add_message "FastlaneCI.Proto.BuildResponse.Status" do
+    optional :state, :enum, 1, "FastlaneCI.Proto.BuildResponse.Status.State"
     optional :description, :string, 2
   end
-  add_enum "fastlane_c_i.BuildResponse.Status.State" do
+  add_enum "FastlaneCI.Proto.BuildResponse.Status.State" do
     value :PENDING, 0
     value :RUNNING, 1
     value :FINISHING, 2
@@ -69,15 +60,15 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
 end
 
 module FastlaneCI
-  Log = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.Log").msgclass
-  Log::Level = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.Log.Level").enummodule
-  Command = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.Command").msgclass
-  BuildRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildRequest").msgclass
-  BuildResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildResponse").msgclass
-  BuildResponse::Artifact = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildResponse.Artifact").msgclass
-  BuildResponse::Artifact::Type = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildResponse.Artifact.Type").enummodule
-  BuildResponse::Artifact::Encoding = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildResponse.Artifact.Encoding").enummodule
-  BuildResponse::BuildError = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildResponse.BuildError").msgclass
-  BuildResponse::Status = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildResponse.Status").msgclass
-  BuildResponse::Status::State = Google::Protobuf::DescriptorPool.generated_pool.lookup("fastlane_c_i.BuildResponse.Status.State").enummodule
+  module Proto
+    Log = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.Log").msgclass
+    Log::Level = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.Log.Level").enummodule
+    Command = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.Command").msgclass
+    BuildRequest = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.BuildRequest").msgclass
+    BuildResponse = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.BuildResponse").msgclass
+    BuildResponse::Artifact = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.BuildResponse.Artifact").msgclass
+    BuildResponse::BuildError = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.BuildResponse.BuildError").msgclass
+    BuildResponse::Status = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.BuildResponse.Status").msgclass
+    BuildResponse::Status::State = Google::Protobuf::DescriptorPool.generated_pool.lookup("FastlaneCI.Proto.BuildResponse.Status.State").enummodule
+  end
 end

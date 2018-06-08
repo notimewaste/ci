@@ -1,50 +1,24 @@
-require "micromachine"
-require "tmpdir"
-
+require 'tmpdir'
 require_relative "agent"
+require_relative "build/state_machine"
 
 module FastlaneCI::Agent
   class Build
-    include Logging
-
-    module Receipes
-      # TODO: move receipes here.
-    end
+    prepend StateMachine
 
     def initialize(build_request, yielder)
       @build_request = build_request
       @yielder = yielder
-
       @output_queue = Queue.new
-
-      @state = MicroMachine.new("pending").tap do |fsm|
-        fsm.when(:run,     "pending"   => "running")
-        fsm.when(:finish,  "running"   => "finishing")
-        fsm.when(:succeed, "finishing" => "succeeded")
-        fsm.when(:reject,  "running"   => "rejected")
-        fsm.when(:fail,    "running"   => "failed")
-
-        # TODO: this is unused for now. throwing/catching is handled by the listener.
-        fsm.when(:throw,   "pending"   => "caught",
-                           "running"   => "caught",
-                           "finishing" => "caught")
-
-        # send update whenever we transition states.
-        fsm.on(:any) do |event, payload|
-          send_status(event, payload)
-        end
-      end
     end
 
     ## state machine actions
 
     def run
-      return unless @state.trigger(:run)
-
       # send logs that get put on the output queue.
       # this needs to be on a separate thread since Queue is a threadsafe blocking queue.
       Thread.new do
-        send_log(@output_queue.pop) while @state.state == "running"
+        send_log(@output_queue.pop) while state == "running"
       end
 
       git_url = command_env(:GIT_URL)
@@ -66,8 +40,6 @@ module FastlaneCI::Agent
     end
 
     def finish
-      return unless @state.trigger(:finish)
-
       artifact_path = command_env(:FASTLANE_CI_ARTIFACTS)
 
       archive_artifacts(artifact_path)
@@ -76,15 +48,12 @@ module FastlaneCI::Agent
     end
 
     def fail
-      return unless @state.trigger(:fail)
     end
 
     def succeed
-      return unless @state.trigger(:succeed)
     end
 
     def reject(reason)
-      return unless @state.trigger(:reject, reason)
     end
 
     ## build recipe methods
@@ -137,18 +106,18 @@ module FastlaneCI::Agent
     # responder methods
 
     def send_status(event, payload)
-      logger.debug("Status changed. Event `#{event}` => #{@state.state}")
+      logger.debug("Status changed. Event `#{event}` => #{state}")
 
-      status = FastlaneCI::BuildResponse::Status.new
-      status.state = @state.state.to_s.upcase.to_sym
+      status = FastlaneCI::Proto::BuildResponse::Status.new
+      status.state = state.to_s.upcase.to_sym
       status.description = payload unless payload.nil?
 
-      @yielder << FastlaneCI::BuildResponse.new(status: status)
+      @yielder << FastlaneCI::Proto::BuildResponse.new(status: status)
     end
 
     def send_log(line)
-      log = FastlaneCI::Log.new(message: line)
-      @yielder << FastlaneCI::BuildResponse.new(log: log)
+      log = FastlaneCI::Proto::Log.new(message: line)
+      @yielder << FastlaneCI::Proto::BuildResponse.new(log: log)
     end
 
     def send_archive(artifact_path, chunk_size: 1024 * 1024)
@@ -161,10 +130,10 @@ module FastlaneCI::Agent
       file = File.open(archive_path, "rb")
 
       until file.eof?
-        artifact = FastlaneCI::BuildResponse::Artifact.new
+        artifact = FastlaneCI::Proto::BuildResponse::Artifact.new
         artifact.chunk = file.read(chunk_size)
 
-        @yielder << FastlaneCI::BuildResponse.new(artifact: artifact)
+        @yielder << FastlaneCI::Proto::BuildResponse.new(artifact: artifact)
       end
     end
 
