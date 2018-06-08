@@ -46,7 +46,7 @@ module FastlaneCI::Agent
 
     def run
       unless state_machine.trigger(:run)
-        logger.error("`run` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid event.s")
+        logger.error("`run` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid events.")
         return
       end
 
@@ -55,7 +55,7 @@ module FastlaneCI::Agent
 
     def finish
       unless state_machine.trigger(:finish)
-        logger.error("`finish` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid event.s")
+        logger.error("`finish` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid events.")
         return
       end
 
@@ -64,7 +64,7 @@ module FastlaneCI::Agent
 
     def succeed
       unless state_machine.trigger(:finish)
-        logger.error("`succeed` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid event.s")
+        logger.error("`succeed` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid events.")
         return
       end
 
@@ -73,7 +73,7 @@ module FastlaneCI::Agent
 
     def reject(reason)
       unless state_machine.trigger(:reject, reason)
-        logger.error("`reject` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid event.s")
+        logger.error("`reject` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid events.")
         return
       end
 
@@ -82,7 +82,7 @@ module FastlaneCI::Agent
 
     def fail
       unless state_machine.trigger(:fail)
-        logger.error("`fail` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid event.s")
+        logger.error("`fail` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid events.")
         return
       end
 
@@ -91,7 +91,7 @@ module FastlaneCI::Agent
 
     def throw
       unless state_machine.trigger(:throw)
-        logger.error("`throw` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid event.s")
+        logger.error("`throw` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid events.")
         return
       end
 
