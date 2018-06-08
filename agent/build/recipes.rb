@@ -4,7 +4,7 @@ module FastlaneCI::Agent
 
   ##
   # stateless build recipes go here
-  module Receipes
+  module Recipes
 
     # all method below this are module functions, callable on the module directly.
     module_function
