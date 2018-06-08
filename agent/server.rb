@@ -75,7 +75,7 @@ module FastlaneCI
               #build.throw(exception)
 
               logger.error("Caught Error: #{exception}")
-              status = Proto::BuildResponse::Status.new(state: :CAUGHT)
+              status = Proto::BuildResponse::Status.new(state: :BROKEN)
               yielder << Proto::BuildResponse.new(status: status)
 
               error = Proto::BuildResponse::BuildError.new

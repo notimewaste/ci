@@ -83,7 +83,7 @@ message BuildResponse {
       PENDING = 0;
       RUNNING = 1;
       FINISHING = 2;  // job was successful, but we are still transmitting artifact.
-      CAUGHT = 3;
+      BROKEN = 3;
       SUCCEEDED = 4;
       FAILED = 5;     // failed is when a test failed, error is when it could not complete the run.
       REJECTED = 6;

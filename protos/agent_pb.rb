@@ -52,7 +52,7 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     value :PENDING, 0
     value :RUNNING, 1
     value :FINISHING, 2
-    value :CAUGHT, 3
+    value :BROKEN, 3
     value :SUCCEEDED, 4
     value :FAILED, 5
     value :REJECTED, 6

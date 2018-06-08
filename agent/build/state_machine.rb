@@ -28,9 +28,9 @@ module FastlaneCI::Agent
         fsm.when(:fail,    "running"   => "failed")
 
         # TODO: this is unused for now. throwing/catching is handled by the listener.
-        fsm.when(:throw,   "pending"   => "caught",
-                           "running"   => "caught",
-                           "finishing" => "caught")
+        fsm.when(:throw,   "pending"   => "broken",
+                           "running"   => "broken",
+                           "finishing" => "broken")
 
         # send update whenever we transition states.
         fsm.on(:any) do |event, payload|

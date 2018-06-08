@@ -20,7 +20,7 @@ describe FastlaneCI::Agent::StateMachine do
   end
 
   it 'creates a state machine with the expected states' do
-    expect(build.states).to contain_exactly("pending", "running", "finishing", "succeeded", "rejected", "failed", "caught")
+    expect(build.states).to contain_exactly("pending", "running", "finishing", "succeeded", "rejected", "failed", "broken")
   end
 
   it 'attempts to call `send_status` on a transition' do
