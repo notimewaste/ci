@@ -26,8 +26,6 @@ module FastlaneCI::Agent
         fsm.when(:succeed, "finishing" => "succeeded")
         fsm.when(:reject,  "running"   => "rejected")
         fsm.when(:fail,    "running"   => "failed")
-
-        # TODO: this is unused for now. throwing/catching is handled by the listener.
         fsm.when(:throw,   "pending"   => "broken",
                            "running"   => "broken",
                            "finishing" => "broken")
@@ -89,8 +87,8 @@ module FastlaneCI::Agent
       super if defined?(super)
     end
 
-    def throw
-      unless state_machine.trigger(:throw)
+    def throw(exception)
+      unless state_machine.trigger(:throw, exception)
         logger.error("`throw` could not transition from `#{state}`. #{state_machine.triggerable_events.inspect} are the only valid events.")
         return
       end

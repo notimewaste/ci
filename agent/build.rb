@@ -58,6 +58,16 @@ module FastlaneCI::Agent
     def reject(reason)
     end
 
+    def throw(exception)
+      logger.error("Caught Error: #{exception}")
+
+      error = FastlaneCI::Proto::BuildResponse::BuildError.new
+      error.stacktrace = exception.backtrace.join("\n")
+      error.error_description = exception.message
+
+      @yielder << FastlaneCI::Proto::BuildResponse.new(build_error: error)
+    end
+
     ## state machine transition guards
 
     def has_required_xcode_version?
@@ -72,7 +82,7 @@ module FastlaneCI::Agent
 
       status = FastlaneCI::Proto::BuildResponse::Status.new
       status.state = state.to_s.upcase.to_sym
-      status.description = payload unless payload.nil?
+      status.description = payload.to_s unless payload.nil?
 
       @yielder << FastlaneCI::Proto::BuildResponse.new(status: status)
     end
