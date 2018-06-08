@@ -1,4 +1,5 @@
 require 'tmpdir'
+require_relative "../agent"
 
 module FastlaneCI::Agent
 
@@ -51,11 +52,22 @@ module FastlaneCI::Agent
       return true
     end
 
-    ## state machine transition guards
+    # use this to execute shell commands so the output can be streamed back as a response.
+    def sh(*params, env: {})
+      @output_queue.push(params.join(" "))
+      stdin, stdouterr, thread = Open3.popen2e(*params)
+      stdin.close
 
-    def has_required_xcode_version?
-      # TODO: bring in from build_runner
-      rand(10) > 3 # 1 in 3 chance of failure
+      # `gets` on a pipe will block until the pipe is closed, then returns nil.
+      while line = stdouterr.gets
+        logger.debug(line)
+        @output_queue.push(line)
+      end
+
+      exit_status = thread.value.exitstatus
+      if exit_status != 0
+        raise SystemCallError.new(line, exit_status)
+      end
     end
   end
 end

@@ -1,5 +1,6 @@
 require 'tmpdir'
 require_relative "agent"
+require_relative "build/recipes"
 require_relative "build/state_machine"
 
 module FastlaneCI::Agent
@@ -10,6 +11,7 @@ module FastlaneCI::Agent
       @build_request = build_request
       @yielder = yielder
       @output_queue = Queue.new
+      Recipes.output_queue = @output_queue
     end
 
     ## state machine actions
@@ -23,14 +25,14 @@ module FastlaneCI::Agent
 
       git_url = command_env(:GIT_URL)
 
-      setup_repo(git_url)
+      Recipes.setup_repo(git_url)
 
       unless has_required_xcode_version?
         reject("Does not have required xcode version!. This is hardcode to be random.")
         return
       end
 
-      if run_fastlane(@build_request.command.env.to_h)
+      if Recipes.run_fastlane(@build_request.command.env.to_h)
         finish
       else
         # fail is a keyword, so we must call self.
@@ -42,8 +44,8 @@ module FastlaneCI::Agent
     def finish
       artifact_path = command_env(:FASTLANE_CI_ARTIFACTS)
 
-      archive_artifacts(artifact_path)
-      send_archive(artifact_path)
+      Recipes.archive_artifacts(artifact_path)
+      Recipes.send_archive(artifact_path)
       succeed
     end
 
@@ -54,46 +56,6 @@ module FastlaneCI::Agent
     end
 
     def reject(reason)
-    end
-
-    ## build recipe methods
-
-    def setup_repo(git_url)
-      dir = Dir.mktmpdir("fastlane-ci")
-      Dir.chdir(dir)
-      logger.debug("Changing into working directory #{dir}.")
-
-      sh("git clone --depth 1 #{git_url} repo")
-
-      Dir.chdir("repo")
-      sh("gem install bundler --no-doc")
-      sh("bundle install --deployment")
-
-      sh("gem install cocoapods --no-doc")
-      sh("pod install")
-    end
-
-    def run_fastlane(env)
-      logger.debug("invoking fastlane.")
-      # TODO: send the env to fastlane.
-      sh("bundle exec fastlane actions")
-
-      # TODO: return true/false depending on tests passing?
-      true
-    end
-
-    def archive_artifacts(artifact_path)
-      unless Dir.exist?(artifact_path)
-        logger.debug("No artifacts found in #{File.expand_path(artifact_path)}.")
-        return false
-      end
-      logger.debug("Archiving directory #{artifact_path}")
-
-      Dir.chdir(artifact_path) do
-        sh("tar -cvzf Archive.tgz .")
-      end
-
-      return true
     end
 
     ## state machine transition guards
@@ -134,24 +96,6 @@ module FastlaneCI::Agent
         artifact.chunk = file.read(chunk_size)
 
         @yielder << FastlaneCI::Proto::BuildResponse.new(artifact: artifact)
-      end
-    end
-
-    # use this to execute shell commands so the output can be streamed back as a response.
-    def sh(*params, env: {})
-      @output_queue.push(params.join(" "))
-      stdin, stdouterr, thread = Open3.popen2e(*params)
-      stdin.close
-
-      # `gets` on a pipe will block until the pipe is closed, then returns nil.
-      while line = stdouterr.gets
-        logger.debug(line)
-        @output_queue.push(line)
-      end
-
-      exit_status = thread.value.exitstatus
-      if exit_status != 0
-        raise SystemCallError.new(line, exit_status)
       end
     end
 
